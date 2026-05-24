@@ -1,0 +1,86 @@
+[
+  {
+    "id": "music_artist",
+    "version": "0.1.0",
+    "keywords": ["album", "song", "band", "guitar", "jazz", "lyrics", "singer", "trumpet", "producer"],
+    "required_entities": ["song", "album", "collaborator", "genre", "award"],
+    "preferred_sources": ["user_notes", "wikipedia", "wikidata", "musicbrainz"],
+    "retrieval_policy": {
+      "preferred_entity_types": ["song", "album", "collaborator", "genre", "award"],
+      "rights_threshold": "strict",
+      "min_source_trust": 0.7
+    }
+  },
+  {
+    "id": "film",
+    "version": "0.1.0",
+    "keywords": ["film", "movie", "director", "cast", "cinema", "screenplay", "actor"],
+    "required_entities": ["cast_member", "character", "director", "release_fact"],
+    "preferred_sources": ["user_notes", "wikipedia", "wikidata", "tmdb"],
+    "retrieval_policy": {
+      "preferred_entity_types": ["cast_member", "character", "director", "release_fact"],
+      "rights_threshold": "strict",
+      "min_source_trust": 0.7
+    }
+  },
+  {
+    "id": "book",
+    "version": "0.1.0",
+    "keywords": ["novel", "book", "author", "chapter", "character"],
+    "required_entities": ["author", "character", "setting", "theme"],
+    "preferred_sources": ["user_notes", "wikipedia", "openlibrary"],
+    "retrieval_policy": {
+      "preferred_entity_types": ["author", "character", "setting", "theme"],
+      "rights_threshold": "strict",
+      "min_source_trust": 0.7
+    }
+  },
+  {
+    "id": "technical_topic",
+    "version": "0.1.0",
+    "keywords": ["python", "api", "function", "class", "algorithm", "database", "vector"],
+    "required_entities": ["term", "definition", "example", "misconception"],
+    "preferred_sources": ["user_notes", "documentation", "wikipedia"],
+    "retrieval_policy": {
+      "preferred_entity_types": ["term", "definition", "example", "misconception"],
+      "rights_threshold": "standard",
+      "min_source_trust": 0.65
+    }
+  },
+  {
+    "id": "classroom_lesson",
+    "version": "0.1.0",
+    "keywords": ["lesson", "students", "learning objective", "quiz", "classroom"],
+    "required_entities": ["term", "learning_objective", "misconception", "example"],
+    "preferred_sources": ["user_notes", "lesson_notes"],
+    "retrieval_policy": {
+      "preferred_entity_types": ["term", "learning_objective", "misconception", "example"],
+      "rights_threshold": "standard",
+      "min_source_trust": 0.65
+    }
+  },
+  {
+    "id": "historical_subject",
+    "version": "0.1.0",
+    "keywords": ["century", "war", "revolution", "empire", "president", "king", "queen"],
+    "required_entities": ["person", "date", "place", "event", "cause", "consequence"],
+    "preferred_sources": ["user_notes", "wikipedia", "wikidata", "primary_source"],
+    "retrieval_policy": {
+      "preferred_entity_types": ["person", "date", "place", "event", "cause", "consequence"],
+      "rights_threshold": "standard",
+      "min_source_trust": 0.7
+    }
+  },
+  {
+    "id": "general_concept",
+    "version": "0.1.0",
+    "keywords": [],
+    "required_entities": ["term", "person", "place", "work"],
+    "preferred_sources": ["user_notes", "wikipedia", "wikidata"],
+    "retrieval_policy": {
+      "preferred_entity_types": ["term", "person", "place", "work"],
+      "rights_threshold": "standard",
+      "min_source_trust": 0.6
+    }
+  }
+]

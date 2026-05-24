@@ -1,0 +1,27 @@
+{
+  "id": "retrieval-golden-v1",
+  "version": "0.1.0",
+  "protected": true,
+  "cases": [
+    {
+      "query": "Miles Davis jazz album",
+      "taxonomy": "music_artist",
+      "source_pack_id": "fixture_music",
+      "relevant_ids": ["fixture_music_kind_of_blue"],
+      "required_source_types": ["wikipedia"],
+      "min_recall_at_k": 1.0,
+      "min_evidence_precision": 0.5,
+      "max_stale_source_rate": 0.0
+    },
+    {
+      "query": "Python decorator function",
+      "taxonomy": "technical_topic",
+      "source_pack_id": "fixture_python",
+      "relevant_ids": ["fixture_python_decorator"],
+      "required_source_types": ["documentation"],
+      "min_recall_at_k": 1.0,
+      "min_evidence_precision": 0.5,
+      "max_stale_source_rate": 0.0
+    }
+  ]
+}

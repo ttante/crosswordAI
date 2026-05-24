@@ -1,0 +1,40 @@
+[
+  {
+    "id": "user-notes",
+    "version": "0.1.0",
+    "source_type": "user_notes",
+    "trust_default": 0.95
+  },
+  {
+    "id": "wikipedia",
+    "version": "0.1.0",
+    "source_type": "wikipedia",
+    "trust_default": 0.75,
+    "endpoint": "https://en.wikipedia.org/w/api.php",
+    "license_or_rights_status": "cc-by-sa-summary"
+  },
+  {
+    "id": "wikidata",
+    "version": "0.1.0",
+    "source_type": "wikidata",
+    "trust_default": 0.85,
+    "endpoint": "https://www.wikidata.org/w/api.php",
+    "license_or_rights_status": "cc0-metadata"
+  },
+  {
+    "id": "musicbrainz",
+    "version": "0.1.0",
+    "source_type": "musicbrainz",
+    "trust_default": 0.85,
+    "endpoint": "https://musicbrainz.org/ws/2",
+    "license_or_rights_status": "open-metadata"
+  },
+  {
+    "id": "openlibrary",
+    "version": "0.1.0",
+    "source_type": "openlibrary",
+    "trust_default": 0.8,
+    "endpoint": "https://openlibrary.org/search.json",
+    "license_or_rights_status": "open-metadata"
+  }
+]

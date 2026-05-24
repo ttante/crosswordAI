@@ -1,0 +1,239 @@
+{
+  "artifact": {
+    "artifact_id": "art_web_fixture_export",
+    "checksum": "sha256:fixture",
+    "created_at": "2026-05-24T00:00:00+00:00",
+    "href": "/api/artifacts/art_web_fixture_export",
+    "label": "Public puzzle export",
+    "media_type": "application/vnd.crosswordai.core-export-bundle+json"
+  },
+  "batch_summary": {
+    "artifacts": [
+      {
+        "artifact_id": "art_web_fixture_export",
+        "checksum": "sha256:fixture",
+        "created_at": "2026-05-24T00:00:00+00:00",
+        "href": "/api/artifacts/art_web_fixture_export",
+        "label": "Public puzzle export",
+        "media_type": "application/vnd.crosswordai.core-export-bundle+json"
+      }
+    ],
+    "batch_id": "batch_web_fixture",
+    "created_at": "2026-05-24T00:00:00+00:00",
+    "routes": [
+      "baseline-local",
+      "cheap-first-cascade"
+    ],
+    "status": "succeeded",
+    "summary": {
+      "estimated_cost": 0.0,
+      "failed": 0,
+      "quarantined": 0,
+      "succeeded": 2
+    },
+    "theme_count": 2
+  },
+  "player_puzzle": {
+    "clues": [
+      {
+        "answer_hash": "f0393febc2f11b59",
+        "answer_length": 5,
+        "clue_id": "clue_001",
+        "clue_text": "Theme-supported entry from the generated grid",
+        "col": 0,
+        "difficulty": "easy",
+        "direction": "across",
+        "number": 1,
+        "row": 0,
+        "source_evidence_ids": [
+          "ev_kind_of_blue"
+        ]
+      },
+      {
+        "answer_hash": "d5ce8ba10a7acb7d",
+        "answer_length": 5,
+        "clue_id": "clue_002",
+        "clue_text": "Crossing entry with source-backed clue metadata",
+        "col": 0,
+        "difficulty": "easy",
+        "direction": "down",
+        "number": 1,
+        "row": 0,
+        "source_evidence_ids": [
+          "ev_kind_of_blue"
+        ]
+      }
+    ],
+    "export_policy": {
+      "answer_key_included": false,
+      "public_safe": true,
+      "raw_evidence_quotes_included": false
+    },
+    "grid": {
+      "height": 5,
+      "rows": [
+        "ABCDE",
+        "FGHIJ",
+        "KLMNO",
+        "PQRST",
+        "UVWXY"
+      ],
+      "width": 5
+    },
+    "metadata": {
+      "created_at": "2026-05-24T00:00:00+00:00",
+      "difficulty": "easy",
+      "run_id": "run_web_fixture",
+      "source_pack_id": "sp_web_fixture"
+    },
+    "puzzle_id": "puzzle_web_fixture",
+    "status": "playable",
+    "theme": "Miles Davis",
+    "title": "Miles Davis Mini"
+  },
+  "registry_index": {
+    "registries": {
+      "models": {
+        "mock-local": "1"
+      },
+      "policies": {
+        "rights-safe-v1": "1"
+      },
+      "prompts": {
+        "clue_candidate": "1"
+      },
+      "routes": {
+        "baseline-local": "1"
+      }
+    },
+    "warnings": []
+  },
+  "report_summary": {
+    "links": {
+      "inspection_bundle": "/api/reports/run_web_fixture"
+    },
+    "model_contribution": {
+      "baseline-local:local-template": {
+        "clue_count": 2,
+        "estimated_cost": 0.0
+      }
+    },
+    "puzzle_id": "puzzle_web_fixture",
+    "qa_scorecard": {
+      "hard_gate_failures": [],
+      "passed": true,
+      "soft_score": 0.95
+    },
+    "run_id": "run_web_fixture",
+    "source_coverage": {
+      "coverage_gaps": [],
+      "retrieval_precision": 0.9,
+      "source_diversity": 2
+    }
+  },
+  "run_detail": {
+    "artifacts": [
+      {
+        "artifact_id": "art_web_fixture_export",
+        "checksum": "sha256:fixture",
+        "created_at": "2026-05-24T00:00:00+00:00",
+        "href": "/api/artifacts/art_web_fixture_export",
+        "label": "Public puzzle export",
+        "media_type": "application/vnd.crosswordai.core-export-bundle+json"
+      }
+    ],
+    "links": {
+      "player": "/puzzles/puzzle_web_fixture",
+      "source_pack": "/api/source-packs/sp_web_fixture"
+    },
+    "qa_summary": {
+      "hard_gate_failures": [],
+      "metrics": {
+        "ambiguity": 0.08,
+        "rights_risk": "low"
+      },
+      "passed": true,
+      "soft_score": 0.95
+    },
+    "run": {
+      "artifact_count": 3,
+      "completed_at": "2026-05-24T00:00:00+00:00",
+      "created_at": "2026-05-24T00:00:00+00:00",
+      "puzzle_id": "puzzle_web_fixture",
+      "run_id": "run_web_fixture",
+      "run_type": "hardened_core_path",
+      "source_pack_id": "sp_web_fixture",
+      "status": "succeeded",
+      "theme": "Miles Davis"
+    },
+    "stages": [
+      {
+        "artifact_ids": [
+          "art_source"
+        ],
+        "completed_at": "2026-05-24T00:00:00+00:00",
+        "failures": [],
+        "label": "Source pack",
+        "stage_id": "source_pack",
+        "started_at": "2026-05-24T00:00:00+00:00",
+        "status": "succeeded"
+      },
+      {
+        "artifact_ids": [],
+        "completed_at": "2026-05-24T00:00:00+00:00",
+        "failures": [],
+        "label": "Grid construction",
+        "stage_id": "grid",
+        "started_at": "2026-05-24T00:00:00+00:00",
+        "status": "succeeded"
+      },
+      {
+        "artifact_ids": [],
+        "completed_at": "2026-05-24T00:00:00+00:00",
+        "failures": [],
+        "label": "Clue generation and QA",
+        "stage_id": "clues",
+        "started_at": "2026-05-24T00:00:00+00:00",
+        "status": "succeeded"
+      },
+      {
+        "artifact_ids": [
+          "art_web_fixture_export"
+        ],
+        "completed_at": "2026-05-24T00:00:00+00:00",
+        "failures": [],
+        "label": "Publish gate",
+        "stage_id": "publish",
+        "started_at": "2026-05-24T00:00:00+00:00",
+        "status": "succeeded"
+      }
+    ]
+  },
+  "source_pack": {
+    "document_count": 2,
+    "evidence_previews": [
+      {
+        "evidence_id": "ev_kind_of_blue",
+        "rights_risk": "low",
+        "snippet_preview": "Kind of Blue is represented as a source-supported album reference.",
+        "source_title": "Curated notes"
+      }
+    ],
+    "evidence_snippet_count": 4,
+    "graph_summary": {
+      "entity_count": 4,
+      "relationship_count": 3
+    },
+    "quality_score": 0.91,
+    "rights_status": "reviewed_low_risk",
+    "source_pack_id": "sp_web_fixture",
+    "taxonomy": "music_artist",
+    "taxonomy_confidence": 0.94,
+    "theme": "Miles Davis",
+    "vector_notes": {
+      "coverage": 0.88,
+      "strategy": "hybrid",
+      "top_k": 8
+    }
+  }
+}

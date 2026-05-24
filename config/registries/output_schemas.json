@@ -1,0 +1,20 @@
+[
+  {
+    "id": "clue_candidate_v1",
+    "version": "0.1.0",
+    "required_keys": ["answer", "clue", "confidence"],
+    "property_types": {
+      "answer": "string",
+      "clue": "string",
+      "confidence": "number"
+    }
+  },
+  {
+    "id": "answer_candidates_v1",
+    "version": "0.1.0",
+    "required_keys": ["candidates"],
+    "property_types": {
+      "candidates": "array"
+    }
+  }
+]

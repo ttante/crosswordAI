@@ -1,0 +1,91 @@
+:root,
+[data-theme="studio"] {
+  color-scheme: dark;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 52px;
+
+  --radius-1: 4px;
+  --radius-2: 6px;
+  --radius-3: 8px;
+
+  --color-bg: #11131a;
+  --color-bg-elevated: #171a24;
+  --color-surface: rgb(255 255 255 / 6%);
+  --color-surface-strong: rgb(255 255 255 / 10%);
+  --color-border: rgb(255 255 255 / 12%);
+  --color-border-strong: rgb(255 255 255 / 20%);
+  --color-text: #f5f7fb;
+  --color-muted: #c8d0df;
+  --color-subtle: #8f9bae;
+  --color-accent: #ff8ba0;
+  --color-accent-strong: #ff5c7c;
+  --color-accent-contrast: #270710;
+
+  --status-succeeded: #47d18c;
+  --status-running: #6cb7ff;
+  --status-failed: #ff6b6b;
+  --status-quarantined: #ffb55e;
+  --status-pending: #98a4b7;
+  --status-warning: #f6d365;
+
+  --focus-ring: 0 0 0 3px rgb(255 139 160 / 42%);
+  --shadow-panel: 0 20px 52px rgb(0 0 0 / 24%);
+
+  --layout-sidebar: 260px;
+  --content-max: 1180px;
+  --control-height: 42px;
+  --touch-target: 44px;
+
+  --board-cell-min: 34px;
+  --board-cell-max: 54px;
+  --board-border: #202536;
+  --board-block: #11131a;
+  --board-text: #0e1117;
+  --board-active-cell: #ffda64;
+  --board-active-entry: #b9ddff;
+}
+
+[data-theme="player"] {
+  color-scheme: light;
+  --player-bg: #f7f4ec;
+  --player-surface: #fffdf8;
+  --player-surface-strong: #ffffff;
+  --player-border: #d9d4c7;
+  --player-text: #20242c;
+  --player-muted: #5d6675;
+  --player-subtle: #7c8593;
+  --player-accent: #d83f63;
+  --player-accent-strong: #ac2448;
+
+  --color-bg: var(--player-bg);
+  --color-bg-elevated: var(--player-surface);
+  --color-surface: var(--player-surface);
+  --color-surface-strong: var(--player-surface-strong);
+  --color-border: var(--player-border);
+  --color-border-strong: #b9b3a7;
+  --color-text: var(--player-text);
+  --color-muted: var(--player-muted);
+  --color-subtle: var(--player-subtle);
+  --color-accent: var(--player-accent);
+  --color-accent-strong: var(--player-accent-strong);
+  --color-accent-contrast: #ffffff;
+
+  --focus-ring: 0 0 0 3px rgb(216 63 99 / 32%);
+  --shadow-panel: 0 16px 40px rgb(73 62 46 / 12%);
+
+  --board-border: #252a33;
+  --board-block: #10131a;
+  --board-text: #11131a;
+  --board-active-cell: #ffd84d;
+  --board-active-entry: #c6e1ff;
+}

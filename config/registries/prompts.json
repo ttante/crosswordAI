@@ -1,0 +1,22 @@
+[
+  {
+    "id": "noop",
+    "version": "0.1.0",
+    "task": "noop",
+    "template": "No-op prompt placeholder."
+  },
+  {
+    "id": "clue_candidate",
+    "version": "0.1.0",
+    "task": "clue_drafting",
+    "output_schema_id": "clue_candidate_v1",
+    "template": "Write one $style crossword clue for answer $answer using evidence: $evidence. Return JSON with answer, clue, confidence."
+  },
+  {
+    "id": "answer_candidates",
+    "version": "0.1.0",
+    "task": "candidate_generation",
+    "output_schema_id": "answer_candidates_v1",
+    "template": "Generate answer candidates for theme $theme from evidence: $evidence. Return JSON with candidates."
+  }
+]

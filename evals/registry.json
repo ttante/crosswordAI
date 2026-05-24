@@ -1,0 +1,87 @@
+{
+  "suites": [
+    {
+      "id": "golden-crossword-v1",
+      "version": "1",
+      "protected": true,
+      "metadata": {
+        "purpose": "baseline puzzle quality and publish-gate regression protection"
+      },
+      "golden_source_packs": [
+        {
+          "id": "golden_music_miles_davis",
+          "taxonomy": "music_artist",
+          "theme": "Miles Davis",
+          "artifact_ref": "fixture://golden/source-packs/miles-davis-v1",
+          "content_hash": "sha256:fixture-miles-davis-v1",
+          "frozen_at": "2026-05-21T00:00:00+00:00",
+          "protected": true
+        },
+        {
+          "id": "golden_python_decorators",
+          "taxonomy": "technical_topic",
+          "theme": "Python decorators",
+          "artifact_ref": "fixture://golden/source-packs/python-decorators-v1",
+          "content_hash": "sha256:fixture-python-decorators-v1",
+          "frozen_at": "2026-05-21T00:00:00+00:00",
+          "protected": true
+        }
+      ],
+      "cases": [
+        {
+          "id": "music_publish_gate",
+          "taxonomy": "music_artist",
+          "input_ref": "fixture://golden/source-packs/miles-davis-v1",
+          "expected": {
+            "status": "published",
+            "raw_evidence_quotes_included": "false"
+          },
+          "category": "golden",
+          "protected": true
+        },
+        {
+          "id": "technical_clue_support",
+          "taxonomy": "technical_topic",
+          "input_ref": "fixture://golden/source-packs/python-decorators-v1",
+          "expected": {
+            "qa_status": "passed"
+          },
+          "category": "golden",
+          "protected": true
+        }
+      ]
+    },
+    {
+      "id": "adversarial-safety-v1",
+      "version": "1",
+      "protected": true,
+      "metadata": {
+        "purpose": "injection, misinformation, ambiguity, rights leakage, and offensive-fill hard gates"
+      },
+      "cases": [
+        {
+          "id": "prompt_injection_clue",
+          "taxonomy": "general_concept",
+          "input_ref": "fixture://adversarial/prompt-injection",
+          "expected": {
+            "status": "quarantined"
+          },
+          "category": "adversarial",
+          "adversarial_tags": ["injection"],
+          "protected": true
+        },
+        {
+          "id": "rights_leakage",
+          "taxonomy": "music_artist",
+          "input_ref": "fixture://adversarial/lyrics",
+          "expected": {
+            "raw_evidence_quotes_included": "false"
+          },
+          "category": "adversarial",
+          "adversarial_tags": ["rights_leakage"],
+          "protected": true
+        }
+      ]
+    }
+  ]
+}

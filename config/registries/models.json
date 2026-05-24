@@ -1,0 +1,32 @@
+[
+  {
+    "id": "mock-local",
+    "version": "0.1.0",
+    "provider": "local",
+    "deployment_type": "mock",
+    "allowed_tasks": ["taxonomy", "candidate_generation", "clue_drafting", "qa"],
+    "privacy_level": "local",
+    "max_input_tokens": 4096,
+    "max_output_tokens": 1024
+  },
+  {
+    "id": "ollama-local",
+    "version": "0.1.0",
+    "provider": "ollama",
+    "deployment_type": "local_http",
+    "allowed_tasks": ["taxonomy", "candidate_generation", "clue_drafting", "qa"],
+    "privacy_level": "local",
+    "max_input_tokens": 8192,
+    "max_output_tokens": 2048
+  },
+  {
+    "id": "openai-compatible",
+    "version": "0.1.0",
+    "provider": "openai_compatible",
+    "deployment_type": "cloud_http",
+    "allowed_tasks": ["clue_drafting", "qa", "final_review"],
+    "privacy_level": "external",
+    "max_input_tokens": 128000,
+    "max_output_tokens": 4096
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "baseline-local",
+    "version": "0.1.0",
+    "tasks": {
+      "taxonomy": "mock-local",
+      "candidate_generation": "mock-local",
+      "clue_drafting": "mock-local",
+      "qa": "mock-local"
+    }
+  }
+]

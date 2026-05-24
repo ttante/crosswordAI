@@ -1,0 +1,8 @@
+[
+  {
+    "id": "rights-safe-v1",
+    "version": "0.1.0",
+    "blocks": ["long_quote", "prompt_injection", "secret_like_value"],
+    "warns": ["email"]
+  }
+]
