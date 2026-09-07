@@ -1,0 +1,17 @@
+appName: crosswordAI
+timezone: America/Chicago
+stack:
+  frontend: React with TypeScript
+  backend: Python and Node.js
+  database: PostgreSQL
+  cloud: AWS
+  packageManager: pnpm
+flags:
+  hasFrontend: true
+  usesAI: true
+  runsInCloud: true
+harness:
+  targets:
+    - claude
+    - codex
+  qa: true

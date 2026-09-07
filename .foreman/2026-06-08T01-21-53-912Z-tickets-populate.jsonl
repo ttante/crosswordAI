@@ -1,0 +1,15 @@
+{"ts":"2026-06-08T01:23:05.592Z","event":"permission","tool":"Bash","decision":"escalate","reason":"shell redirection is not auto-approved"}
+{"ts":"2026-06-08T01:23:05.593Z","event":"escalation","tool":"Bash","reason":"shell redirection is not auto-approved","input":{"command":"which foreman; foreman --version 2>&1 | head; echo \"---\"; foreman tickets --help 2>&1 | head -40; echo \"---FOREMAN DIR---\"; ls -la .foreman .tickets"}}
+{"ts":"2026-06-08T01:23:09.073Z","event":"permission","tool":"Bash","decision":"allow","reason":"all command segments are allow-listed"}
+{"ts":"2026-06-08T01:23:19.542Z","event":"permission","tool":"Bash","decision":"escalate","reason":"shell redirection is not auto-approved"}
+{"ts":"2026-06-08T01:23:19.542Z","event":"escalation","tool":"Bash","reason":"shell redirection is not auto-approved","input":{"command":"command -v foreman; type foreman 2>/dev/null; ls ~/.local/bin 2>/dev/null | grep -i foreman; npx foreman --version 2>&1 | head -5"}}
+{"ts":"2026-06-08T01:23:22.258Z","event":"permission","tool":"Bash","decision":"escalate","reason":"command segment is not allow-listed: command -v foreman"}
+{"ts":"2026-06-08T01:23:22.259Z","event":"escalation","tool":"Bash","reason":"command segment is not allow-listed: command -v foreman","input":{"command":"command -v foreman; type foreman; ls /usr/local/bin/foreman /usr/bin/foreman ~/.local/bin/foreman"}}
+{"ts":"2026-06-08T01:23:29.219Z","event":"permission","tool":"Bash","decision":"allow","reason":"all command segments are allow-listed"}
+{"ts":"2026-06-08T01:24:19.191Z","event":"permission","tool":"Bash","decision":"allow","reason":"all command segments are allow-listed"}
+{"ts":"2026-06-08T01:28:17.199Z","event":"permission","tool":"Bash","decision":"allow","reason":"all command segments are allow-listed"}
+{"ts":"2026-06-08T01:28:27.098Z","event":"permission","tool":"Bash","decision":"allow","reason":"all command segments are allow-listed"}
+{"ts":"2026-06-08T01:28:54.730Z","event":"permission","tool":"Bash","decision":"allow","reason":"all command segments are allow-listed"}
+{"ts":"2026-06-08T01:30:05.118Z","event":"permission","tool":"Bash","decision":"escalate","reason":"command segment is not allow-listed: grep -cE \"    risk: low$\" .tickets/tickets.yaml"}
+{"ts":"2026-06-08T01:30:05.118Z","event":"escalation","tool":"Bash","reason":"command segment is not allow-listed: grep -cE \"    risk: low$\" .tickets/tickets.yaml","input":{"command":"grep -cE \"    risk: low$\" .tickets/tickets.yaml; grep -cE \"    risk: med$\" .tickets/tickets.yaml; grep -cE \"    risk: high$\" .tickets/tickets.yaml","description":"Count risk value occurrences by level"}}
+{"ts":"2026-06-08T01:30:48.317Z","event":"ticket-populate","statusKind":"done","summary":"populated Foreman tickets from existing project ticket sources","costUsd":3.190796749999999,"isError":false}

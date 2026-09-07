@@ -1,0 +1,1712 @@
+# Foreman canonical ticket definitions for crosswordsAI.
+#
+# Sources preserved here:
+#   - plan.md  Section 26 "Implementation Tickets And Build Order"  -> CORE-001..CORE-029
+#     (exit criteria + IMPLEMENTATION_STATUS.md "Future production tasks" captured in acceptance/notes)
+#   - MATURITY_ROADMAP.md "Prioritized Backlog" (P0.1..P2.2)         -> MAT-P0-1..MAT-P2-2
+#   - docs/web-app-plan.md "Build Sequence And Tickets"             -> WEB-001..WEB-032
+#
+# Status/progress is intentionally NOT stored here; Foreman tracks state separately.
+# IDs preserve the original source numbering. "order" uses 1000-step gaps.
+
+tickets:
+  # ---------------------------------------------------------------------------
+  # Core pipeline build order (plan.md Section 26). Original IDs: "Ticket 1".."Ticket 29".
+  # ---------------------------------------------------------------------------
+  - id: CORE-001
+    order: 1000
+    title: Python Project Foundation
+    area: platform
+    priority: P0
+    size: M
+    risk: Low
+    depends_on: []
+    summary: >-
+      Stand up the Python package, CLI framework, config loading, local dev settings,
+      structured JSON logging, typed artifact/run IDs, and a basic test harness.
+    acceptance:
+      - "`crosswordai --help` works."
+      - A no-op command creates a run ID and structured log.
+      - Unit tests run locally.
+    required_tests:
+      - Unit test that a no-op CLI command emits a run ID and a structured JSON log line.
+      - Test harness boots and discovers tests locally.
+    likely_files:
+      - src/crosswordai/__init__.py
+      - src/crosswordai/cli.py
+      - src/crosswordai/config.py
+      - tests/
+    rollback: Revert package scaffold commit; no runtime data created.
+    notes: >-
+      Original plan.md Ticket 1 (status Complete, maturity Local). Future production tasks:
+      add lint/type-check tooling, package lock strategy, release/build workflow,
+      contributor docs, and a CI matrix.
+
+  - id: CORE-002
+    order: 2000
+    title: Postgres, Migrations, And Object Storage
+    area: platform
+    priority: P0
+    size: L
+    risk: Medium
+    depends_on: [CORE-001]
+    summary: >-
+      Add Postgres schema migrations, an object-storage abstraction, artifact metadata
+      tables, immutable artifact write/read helpers, and a local development storage backend.
+    acceptance:
+      - A run can store and retrieve structured metadata plus an object artifact.
+      - Storage helpers are covered by tests.
+    required_tests:
+      - Tests for immutable artifact write/read round-trip.
+      - Tests for metadata persistence and retrieval through the storage abstraction.
+    likely_files:
+      - migrations/
+      - src/crosswordai/storage.py
+      - src/crosswordai/db.py
+    rollback: Drop new migrations and remove storage helpers; local artifacts are disposable.
+    notes: >-
+      Original plan.md Ticket 2 (Complete, Adapter-ready). Future production tasks:
+      run live Postgres/pgvector integration tests, implement full Postgres source-pack
+      persistence, validate S3/MinIO adapter with credentials, add backup/restore checks.
+
+  - id: CORE-003
+    order: 3000
+    title: Control Plane Registry Skeleton
+    area: platform
+    priority: P0
+    size: M
+    risk: Low
+    depends_on: [CORE-002]
+    summary: >-
+      Add model, prompt, route, policy, source-connector, and wordlist registries loaded
+      from versioned config with validation.
+    acceptance:
+      - Registries load from versioned config.
+      - Invalid registry entries fail validation.
+      - CLI can inspect active registry versions.
+    required_tests:
+      - Tests that valid registry config loads and invalid entries fail validation.
+      - CLI test for `registries inspect` output.
+    likely_files:
+      - config/registries/
+      - src/crosswordai/registries.py
+    rollback: Remove registry module and config; no persistent state.
+    notes: >-
+      Original plan.md Ticket 3 (Complete, Local). Future production tasks: add owners,
+      changelogs, signatures/checksums, environment overlays, registry diff reports, and
+      promotion-controlled registry mutation.
+
+  - id: CORE-004
+    order: 4000
+    title: Workflow Executor Interface
+    area: platform
+    priority: P0
+    size: M
+    risk: Medium
+    depends_on: [CORE-001]
+    summary: >-
+      Define workflow and stage interfaces, a local executor, idempotent stage-output
+      tracking, retry metadata, and checkpoint records.
+    acceptance:
+      - A toy multi-stage workflow can resume from a completed stage.
+      - Failed stages preserve structured failure reasons.
+    required_tests:
+      - Test that a workflow resumes from a checkpointed completed stage.
+      - Test that a failing stage records a structured failure reason.
+    likely_files:
+      - src/crosswordai/workflow.py
+    rollback: Revert workflow module; toy workflows leave no durable state.
+    notes: >-
+      Original plan.md Ticket 4 (Complete, Local). Future production tasks: persist
+      workflow checkpoints, add retry/backoff policies, add Temporal/Prefect adapter,
+      add workflow cancellation and recovery tests.
+
+  - id: CORE-005
+    order: 5000
+    title: Source-Pack Schema And User-Notes Ingestion
+    area: backend
+    priority: P0
+    size: L
+    risk: Medium
+    depends_on: [CORE-002, CORE-003]
+    summary: >-
+      Implement SourcePack, SourceDocument, and EvidenceSnippet; add user-note ingestion,
+      source snapshot storage, source trust metadata, and rights metadata.
+    acceptance:
+      - A source pack can be built from local notes.
+      - Source pack inspection shows documents, snippets, trust, rights metadata, and artifact links.
+    required_tests:
+      - Test building a source pack from local notes.
+      - Test that inspection exposes documents, snippets, trust, rights metadata, and artifact links.
+    likely_files:
+      - src/crosswordai/sources.py
+    rollback: Revert sources module; remove generated source-pack artifacts.
+    notes: >-
+      Original plan.md Ticket 5 (Complete, Local). Do not store full copyrighted lyrics,
+      scripts, poems, or long passages. Future production tasks: external-source merge
+      behavior, richer quality scoring, source-pack version diffs, Postgres-backed detail queries.
+
+  - id: CORE-006
+    order: 6000
+    title: Rights And Safety Baseline
+    area: backend
+    priority: P0
+    size: L
+    risk: High
+    depends_on: [CORE-005]
+    summary: >-
+      Add copyrighted-content risk checks, quote-length and overlap checks, prompt-injection
+      pattern checks, PII/secrets scanning for user notes, and a policy-gate result schema.
+    acceptance:
+      - Long lyrics, scripts, modern-book excerpts, secrets, and prompt-injection attempts are blocked or quarantined.
+      - Policy decisions are logged and attached to source-pack artifacts.
+    required_tests:
+      - Red-team fixtures for lyrics, scripts, book excerpts, secrets, and prompt-injection content are blocked/quarantined.
+      - Test that policy decisions attach to source-pack artifacts.
+    likely_files:
+      - src/crosswordai/safety.py
+    rollback: Revert safety module; rights gating reverts to permissive default (not recommended).
+    notes: >-
+      Original plan.md Ticket 6 (Complete, Baseline). Treat every external document as data,
+      never instructions. Future production tasks: classifier-backed risk scoring, red-team
+      fixture suite, policy registry integration, source-poisoning checks, export-time policy enforcement.
+
+  - id: CORE-007
+    order: 7000
+    title: Vector Store Foundation
+    area: backend
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [CORE-002, CORE-005]
+    summary: >-
+      Add pgvector support, an embedding model adapter, source chunking,
+      source_chunk_embeddings, and vector + lexical + metadata-filtered search.
+    acceptance:
+      - Source chunks can be embedded and queried.
+      - Hybrid retrieval returns cited evidence snippets.
+      - Retrieval tests cover vector, lexical, and metadata-filtered queries.
+    required_tests:
+      - Tests for vector, lexical, and metadata-filtered queries.
+      - Test that hybrid retrieval returns cited evidence snippets.
+    likely_files:
+      - src/crosswordai/vectors.py
+    rollback: Revert vector module; fall back to lexical-only retrieval.
+    notes: >-
+      Original plan.md Ticket 7 (Complete, Adapter-ready). Use Postgres + pgvector first;
+      add HNSW + full-text indexes; use reciprocal-rank/weighted fusion. Future production tasks:
+      validate pgvector against live Postgres, persist retrieval traces at runtime,
+      tune HNSW/FTS weighting, add large-source-pack benchmarks.
+
+  - id: CORE-008
+    order: 8000
+    title: Knowledge Graph Foundation
+    area: backend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [CORE-005]
+    summary: >-
+      Add entity and relationship schemas, aliases and canonical IDs, source-supported
+      relationship records, and graph traversal helpers.
+    acceptance:
+      - A source pack can store entities and relationships.
+      - Graph traversal can propose evidence-backed clue angles.
+    required_tests:
+      - Test storing entities/relationships with aliases and canonical IDs.
+      - Test that traversal proposes evidence-backed clue angles citing evidence IDs.
+    likely_files:
+      - src/crosswordai/graph.py
+    rollback: Revert graph module; candidate generation uses retrieval-only path.
+    notes: >-
+      Original plan.md Ticket 8 (Complete, Local). Relationships include collaborator-of,
+      appeared-in, wrote, performed, influenced-by, member-of, located-in, released-on,
+      character-in, prerequisite-of. Future production tasks: Postgres-backed graph persistence,
+      graph extraction from source packs, traversal evals, confidence calibration, graph/source diff reports.
+
+  - id: CORE-009
+    order: 9000
+    title: Taxonomy Engine
+    area: backend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [CORE-005]
+    summary: >-
+      Implement taxonomy classification and schemas for music artist, film, book, technical
+      topic, classroom lesson, and historical subject, with taxonomy-specific source and retrieval policies.
+    acceptance:
+      - Source packs are assigned taxonomy with confidence.
+      - Taxonomy drives entity schema, retrieval policy, and rights thresholds.
+    required_tests:
+      - Test taxonomy classification with confidence on golden examples.
+      - Test that taxonomy selection changes entity schema, retrieval policy, and rights thresholds.
+    likely_files:
+      - src/crosswordai/taxonomy.py
+    rollback: Revert taxonomy module; default to general-concept taxonomy.
+    notes: >-
+      Original plan.md Ticket 9 (Complete, Local). Future production tasks: larger taxonomy
+      eval set, model-assisted classification, taxonomy drift reports, source-selection
+      enforcement, route-specific taxonomy metrics.
+
+  - id: CORE-010
+    order: 10000
+    title: External Source Connectors
+    area: backend
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [CORE-005, CORE-009]
+    summary: >-
+      Add Wikipedia, Wikidata-style structured metadata, MusicBrainz-style, and
+      public-domain/book metadata connectors with trust and license metadata.
+    acceptance:
+      - Source packs can be built from user notes plus at least two external source types.
+      - Connectors snapshot source metadata and preserve provenance.
+    required_tests:
+      - Test building a source pack from notes plus two external connectors.
+      - Test that connectors snapshot metadata and preserve provenance/content hashes.
+    likely_files:
+      - src/crosswordai/sources.py
+      - src/crosswordai/connectors/
+    rollback: Disable connector registry entries; notes-only source packs still work.
+    notes: >-
+      Original plan.md Ticket 10 (Complete, Adapter-ready). Respect API terms and network
+      allowlists. Future production tasks: live-network integration tests, connector response
+      caching, rate-limit/backoff policies, source refresh workflows, richer error handling.
+
+  - id: CORE-011
+    order: 11000
+    title: Retrieval Evaluation Harness
+    area: ai-evals
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: [CORE-007]
+    summary: >-
+      Add a retrieval eval schema, recall@k and evidence-precision metrics, source-diversity
+      and stale-source metrics, and retrieval failure clustering.
+    acceptance:
+      - Retrieval strategies can be compared on a fixed source-pack eval set.
+      - Retrieval regressions can fail CI or local gate commands.
+    required_tests:
+      - Test computing recall@k, evidence precision, source diversity, stale-source on a fixed eval set.
+      - Test that a regression below threshold fails the gate command.
+    likely_files:
+      - src/crosswordai/retrieval_eval.py
+      - evals/retrieval/
+    rollback: Remove eval harness; retrieval ships without regression gate.
+    notes: >-
+      Original plan.md Ticket 11 (Complete, Local). Future production tasks: larger protected
+      eval suites, live index eval runner, CI regression gate, taxonomy slices, historical trend reports.
+
+  - id: CORE-012
+    order: 12000
+    title: Model Adapter And Routing Layer
+    area: ai
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [CORE-003]
+    summary: >-
+      Add local and cloud model adapters, a cache keyed by input/prompt/model/parameters/route,
+      task-based routing, and budget + timeout enforcement.
+    acceptance:
+      - Mock, local, and cloud-capable model routes share the same interface.
+      - Model calls are cached and logged.
+      - Budget limits stop runaway jobs.
+    required_tests:
+      - Test that mock/local/cloud routes share one interface.
+      - Test cache hit on identical normalized input and that budget limits halt calls.
+    likely_files:
+      - src/crosswordai/models.py
+      - src/crosswordai/routing.py
+    rollback: Revert to mock adapter only; disable cloud routes.
+    notes: >-
+      Original plan.md Ticket 12 (Complete, Adapter-ready). Cloud models receive only minimum
+      source context. Future production tasks: live Ollama/OpenAI-compatible integration tests,
+      provider token/cost accounting, timeout cancellation, streaming support, model-call dashboards.
+
+  - id: CORE-013
+    order: 13000
+    title: Prompt Templates And Structured Outputs
+    area: ai
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [CORE-012]
+    summary: >-
+      Add prompt template versioning, JSON/schema-constrained output parsing, a malformed-output
+      repair path, and prompt diff metadata.
+    acceptance:
+      - Prompt changes are versioned.
+      - Model output parsing failures are captured and repairable.
+    required_tests:
+      - Test that prompt versions are recorded and diffable.
+      - Test schema-constrained parsing plus repair of a malformed model output.
+    likely_files:
+      - src/crosswordai/prompts.py
+      - src/crosswordai/models.py
+    rollback: Revert prompt-versioning module; prompts become unversioned (not recommended).
+    notes: >-
+      Original plan.md Ticket 13 (Complete, Local). Future production tasks: prompt diff reports,
+      prompt eval gates, schema evolution policy, richer repair strategies, registry mutation workflow.
+
+  - id: CORE-014
+    order: 14000
+    title: Answer Candidate Generation
+    area: backend
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [CORE-007, CORE-008, CORE-009]
+    summary: >-
+      Generate answer candidates from entities, graph relationships, retrieval evidence, and
+      taxonomy rules; normalize answers; score theme relevance, familiarity, novelty, rights risk,
+      and difficulty; deduplicate by exact match, alias, root, and embedding similarity.
+    acceptance:
+      - Candidate pools are source-backed and large enough for common 15x15 themes.
+      - Duplicate and weak candidates are filtered before grid solving.
+    required_tests:
+      - Test that candidate pools are source-backed and adequately sized for a 15x15 theme.
+      - Test deduplication by exact match, alias, root, and embedding similarity.
+    likely_files:
+      - src/crosswordai/candidates.py
+    rollback: Revert candidates module; grid solver receives no candidate pool.
+    notes: >-
+      Original plan.md Ticket 14 (Complete, Local). Future production tasks: candidate quality
+      eval sets, model-assisted expansion, crossword answer-list scoring, human editor feedback
+      labels, persisted candidate pools.
+
+  - id: CORE-015
+    order: 15000
+    title: Deterministic Grid Solver
+    area: backend
+    priority: P1
+    size: XL
+    risk: High
+    depends_on: [CORE-014]
+    summary: >-
+      Integrate or implement American-style crossword construction with rotational symmetry,
+      connectivity, checked-letter, minimum-length, and duplicate-answer validation, plus
+      theme-entry placement and fill scoring.
+    acceptance:
+      - Legal grids can be generated from fixed theme entries.
+      - Invalid grids produce precise failure reasons.
+    required_tests:
+      - Test that a legal grid generated from fixed theme entries is connected, symmetric, checked, and duplicate-free.
+      - Test that invalid grids produce precise failure reasons.
+    likely_files:
+      - src/crosswordai/solver.py
+    rollback: Revert solver; no grids generated.
+    notes: >-
+      Original plan.md Ticket 15 (Complete, Local). AI must not directly invent grids.
+      Open decision: custom solver vs existing library. Future production tasks: black-square
+      pattern search, larger licensed wordlists, advanced fill heuristics, performance benchmarks,
+      solver strategy comparison.
+
+  - id: CORE-016
+    order: 16000
+    title: Clue Generation Pipeline
+    area: ai
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [CORE-007, CORE-012, CORE-013]
+    summary: >-
+      Generate clue angles and multiple clues per answer with answer-specific evidence retrieval,
+      supporting direct, trivia, definition-only, cryptic-lite, classroom, easy, standard, and expert styles.
+    acceptance:
+      - Each answer receives multiple clue candidates with evidence and model lineage.
+      - Clue outputs are schema-valid.
+    required_tests:
+      - Test that each answer gets multiple clue candidates with evidence and model lineage.
+      - Test schema validity of clue outputs across supported styles.
+    likely_files:
+      - src/crosswordai/clues.py
+    rollback: Revert clue generation; pipeline stops before clue QA.
+    notes: >-
+      Original plan.md Ticket 16 (Complete, Local). Future production tasks: replace deterministic
+      template writer with routed model prompts, add clue-generation eval sets, style calibration
+      dashboards, prompt/version bakeoffs.
+
+  - id: CORE-017
+    order: 17000
+    title: Clue QA And Repair
+    area: ai
+    priority: P1
+    size: L
+    risk: High
+    depends_on: [CORE-016, CORE-006]
+    summary: >-
+      Add clue-answer correctness, ambiguity, source-support, style/difficulty, answer-leakage,
+      and duplicate-clue checks plus repair loops.
+    acceptance:
+      - Weak clues are repaired or quarantined.
+      - QA results attach to every clue candidate.
+    required_tests:
+      - Test that ambiguous/unsupported/leaking clues are repaired or quarantined.
+      - Test that QA results attach to every clue candidate.
+    likely_files:
+      - src/crosswordai/qa.py
+    rollback: Revert clue QA; clues pass through ungated (not safe for publish).
+    notes: >-
+      Original plan.md Ticket 17 (Complete, Local). Future production tasks: stronger ambiguity
+      solver, crossword-aware wrong-answer search, calibrated source-support judge, repair-success
+      dashboards, human editor feedback labels.
+
+  - id: CORE-018
+    order: 18000
+    title: Agentic Critic Workflows
+    area: ai
+    priority: P2
+    size: L
+    risk: High
+    depends_on: [CORE-017, CORE-004]
+    summary: >-
+      Add bounded LangGraph-style stateful critic-repair loops with clue writer, clue critic,
+      fact checker, rights reviewer, and puzzle editor roles, agent tool allowlists, and
+      max-cost / max-latency / max-iteration budgets.
+    acceptance:
+      - Agent workflows operate on typed artifacts.
+      - Agents cannot override deterministic hard gates.
+      - Agent disagreement is recorded as eval data.
+    required_tests:
+      - Test that agents operate on typed artifacts and cannot override deterministic hard gates.
+      - Test that agent disagreement is captured as eval data, and budgets bound loops.
+    likely_files:
+      - src/crosswordai/agents.py
+    rollback: Disable agentic loop; deterministic clue QA path remains authoritative.
+    notes: >-
+      Original plan.md Ticket 18 (Complete, Local). Agents cite evidence IDs; tools allowlisted
+      per role; memory scoped per run. Future production tasks: LangGraph runtime, persisted
+      agent memory/events, richer disagreement analytics, role-specific tool sandboxes, latency/cost dashboards.
+
+  - id: CORE-019
+    order: 19000
+    title: Publish Gate And Puzzle Exports
+    area: backend
+    priority: P1
+    size: L
+    risk: High
+    depends_on: [CORE-015, CORE-017]
+    summary: >-
+      Add hard-gate publish decision, soft scorecard, quarantine reasons, and puzzle JSON,
+      answer key JSON, source map, QA scorecard, and model lineage exports.
+    acceptance:
+      - No puzzle publishes with hard-gate failures.
+      - Exported artifacts exclude hidden copyrighted source content.
+    required_tests:
+      - Test that any hard-gate failure quarantines and prevents publish with exact reasons.
+      - Test that exports exclude hidden copyrighted source content.
+    likely_files:
+      - src/crosswordai/qa.py
+      - src/crosswordai/exports.py
+    rollback: Revert publish gate/exports; no publish path (safe-fail).
+    notes: >-
+      Original plan.md Ticket 19 (Complete, Local). Hard gates: grid legality, fill validity,
+      duplicate answer/clue, theme consistency, source support, clue-answer correctness, ambiguity,
+      rights safety, offensive content, difficulty bounds, export validity. Future production tasks:
+      PDF/web-play payloads, PUZ/IPUZ exporters, export artifact signing, editorial preview UI,
+      internal-only source audit views.
+
+  - id: CORE-020
+    order: 20000
+    title: OpenTelemetry And LLMOps Observability
+    area: observability
+    priority: P2
+    size: L
+    risk: Medium
+    depends_on: [CORE-004, CORE-012]
+    summary: >-
+      Add trace spans per workflow, stage, model call, retrieval call, validator, and export;
+      cost and latency rollups; model-call lineage; and run inspection reports.
+    acceptance:
+      - A run can be inspected from puzzle back to source evidence and model calls.
+      - Cost, latency, retry count, cache hit rate, and QA gates are visible per run.
+    required_tests:
+      - Test that run inspection links puzzle back to source evidence and model calls.
+      - Test that cost, latency, retry, cache-hit, and QA-gate metrics are present per run.
+    likely_files:
+      - src/crosswordai/observability.py
+    rollback: Revert observability module; runs still execute without trace rollups.
+    notes: >-
+      Original plan.md Ticket 20 (Complete, Local). Future production tasks: OpenTelemetry
+      SDK/exporter, distributed trace propagation, dashboard templates, alert rules, persisted
+      trace/artifact correlation.
+
+  - id: CORE-021
+    order: 21000
+    title: Evaluation Registry And Golden Sets
+    area: ai-evals
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [CORE-011, CORE-019]
+    summary: >-
+      Add an eval registry, frozen golden source packs, taxonomy-specific evals, and adversarial
+      evals for injection, misinformation, ambiguity, rights leakage, and offensive fill.
+    acceptance:
+      - Evals can compare two routes.
+      - Protected hard-gate regressions fail promotion.
+    required_tests:
+      - Test comparing two routes on frozen golden source packs.
+      - Test that a protected hard-gate regression fails promotion.
+    likely_files:
+      - src/crosswordai/evals.py
+      - evals/
+    rollback: Revert eval registry; promotion loses protected gate (block promotions).
+    notes: >-
+      Original plan.md Ticket 21 (Complete, Local). Golden packs cover music artist, album,
+      film, TV, book, historical event, programming topic, classroom lesson, general concept.
+      Future production tasks: expand golden packs, judge calibration records, taxonomy slice
+      leaderboards, adversarial fuzzing, protected CI promotion gates.
+
+  - id: CORE-022
+    order: 22000
+    title: Batch Generation Engine
+    area: backend
+    priority: P2
+    size: L
+    risk: Medium
+    depends_on: [CORE-019, CORE-004]
+    summary: >-
+      Add batch run-set schema, batch CLI commands, fan-out/fan-in execution, checkpointed batch
+      outputs, and cancellation plus budget stopping.
+    acceptance:
+      - The system can generate puzzles for many themes in one run.
+      - Batch results are inspectable and reproducible.
+    required_tests:
+      - Test generating puzzles for multiple themes in one batch run.
+      - Test checkpoint resume, cancellation, budget stop, and reproducibility hashes.
+    likely_files:
+      - src/crosswordai/batch.py
+      - src/crosswordai/experiments.py
+    rollback: Revert batch engine; single-run generation still available.
+    notes: >-
+      Original plan.md Ticket 22 (Complete, Local). Future production tasks: resumable DB-backed
+      queue, cancellation API, live progress UI, artifact compaction, production run-set retention policies.
+
+  - id: CORE-023
+    order: 23000
+    title: Model Bakeoff And Experimentation
+    area: ai-evals
+    priority: P2
+    size: L
+    risk: Medium
+    depends_on: [CORE-021, CORE-022]
+    summary: >-
+      Add an experiment matrix runner for models, prompts, routes, retrieval strategies, judge
+      models, and repair strategies, plus route comparison reports and a leaderboard by taxonomy and metric.
+    acceptance:
+      - Multiple model-responsibility strategies can be tested on the same source packs.
+      - Reports compare quality, cost, latency, publish rate, and failure modes.
+    required_tests:
+      - Test running an experiment matrix over multiple strategies on the same source packs.
+      - Test that reports compare quality, cost, latency, publish rate, and failure modes.
+    likely_files:
+      - src/crosswordai/experiments.py
+    rollback: Revert experiment runner; manual single-route runs remain.
+    notes: >-
+      Original plan.md Ticket 23 (Complete, Local). Strategies: specialist pipeline, cheap-first
+      cascade, debate, jury, self-play solver, adversarial editor, bandit router, ensemble retrieval.
+      Future production tasks: statistical significance tests, persisted leaderboard history,
+      taxonomy slice dashboards, judge calibration, automated route recommendations.
+
+  - id: CORE-024
+    order: 24000
+    title: Distributed Batch And GPU Throughput
+    area: platform
+    priority: P3
+    size: L
+    risk: Medium
+    depends_on: [CORE-022]
+    summary: >-
+      Add a Ray-backed executor for embedding, model inference, eval sweeps, and large batch
+      generation, plus GPU batching controls and worker health/retry reporting.
+    acceptance:
+      - Batch evals can scale beyond a single local process.
+      - Throughput, cost, and failure metrics are captured by worker and task type.
+    required_tests:
+      - Test that batch work distributes beyond a single process (Ray executor, mockable).
+      - Test throughput/cost/failure metrics captured per worker and task type.
+    likely_files:
+      - src/crosswordai/distributed.py
+    rollback: Fall back to local single-process executor.
+    notes: >-
+      Original plan.md Ticket 24 (Complete, Local). Future production tasks: wire real Ray executor,
+      autoscaling worker pools, GPU utilization telemetry, batch-size autotuning, multi-node throughput benchmarks.
+
+  - id: CORE-025
+    order: 25000
+    title: Advanced Model Routing
+    area: ai
+    priority: P2
+    size: L
+    risk: Medium
+    depends_on: [CORE-012, CORE-023]
+    summary: >-
+      Add shadow mode, jury routing, debate routing, cheap-first cascade routing, self-play solver
+      checks, and bandit-routing experiment support.
+    acceptance:
+      - Advanced routes can run in batch without replacing baseline production routes.
+      - Shadow-mode reports show whether candidate routes should be promoted.
+    required_tests:
+      - Test that advanced routes run in batch without replacing the baseline route.
+      - Test shadow-mode report recommends promote/hold for a candidate route.
+    likely_files:
+      - src/crosswordai/routing.py
+    rollback: Disable advanced routes; baseline route unaffected.
+    notes: >-
+      Original plan.md Ticket 25 (Complete, Local). Future production tasks: live route traffic
+      shadowing, persisted bandit state, calibrated jury/debate judges, self-play solver benchmarks,
+      production route guardrails.
+
+  - id: CORE-026
+    order: 26000
+    title: Distillation Dataset Pipeline
+    area: ai
+    priority: P3
+    size: M
+    risk: Medium
+    depends_on: [CORE-019, CORE-021]
+    summary: >-
+      Convert accepted, rejected, repaired, and quarantined artifacts into labeled datasets with
+      train/validation/test split creation, dataset cards, and task-specific export formats.
+    acceptance:
+      - At least one specialist task has a frozen dataset ready for fine-tuning or classifier training.
+      - Dataset lineage points back to source packs and QA decisions.
+    required_tests:
+      - Test building a frozen train/val/test split for one specialist task.
+      - Test that dataset lineage references source packs and QA decisions.
+    likely_files:
+      - src/crosswordai/datasets.py
+    rollback: Revert dataset pipeline; no distillation datasets emitted.
+    notes: >-
+      Original plan.md Ticket 26 (Complete, Local). Good distillation candidates: taxonomy,
+      source trust, difficulty, ambiguity, clue-answer match, rights-risk, fill quality,
+      theme consistency. Future production tasks: dataset quality validators, artifact-store
+      persistence, privacy filters, annotation review workflow, fine-tuning upload adapters.
+
+  - id: CORE-027
+    order: 27000
+    title: Model Promotion And Rollback
+    area: ai
+    priority: P2
+    size: M
+    risk: High
+    depends_on: [CORE-021, CORE-025]
+    summary: >-
+      Add a promotion workflow for prompts, models, routes, retrieval policies, and judges with a
+      shadow-mode requirement, rollback metadata, and promotion reports.
+    acceptance:
+      - No route can be promoted without eval evidence.
+      - Rollback target is always recorded.
+    required_tests:
+      - Test that promotion is blocked without eval evidence.
+      - Test that every promotion records a rollback target.
+    likely_files:
+      - src/crosswordai/promotion.py
+    rollback: Revert promotion workflow; registries stay at current pinned versions.
+    notes: >-
+      Original plan.md Ticket 27 (Complete, Local). Future production tasks: registry write
+      transactions, rollback CLI, signed promotion approvals, multi-env rollout stages, audit-log persistence.
+
+  - id: CORE-028
+    order: 28000
+    title: Enterprise Reports And Bells And Whistles
+    area: reports
+    priority: P3
+    size: L
+    risk: Low
+    depends_on: [CORE-019, CORE-020]
+    summary: >-
+      Add puzzle quality heatmap, clue lineage report, source coverage report, quarantine
+      postmortem, model contribution report, and puzzle/model cards.
+    acceptance:
+      - A generated puzzle has a polished inspection bundle suitable for demos, debugging, and future UI surfaces.
+    required_tests:
+      - Test that the inspection bundle includes heatmap, clue lineage, source coverage, model contribution, and cards.
+      - Test quarantine postmortem content for a quarantined puzzle.
+    likely_files:
+      - src/crosswordai/reports.py
+    rollback: Revert reports module; raw artifacts still available.
+    notes: >-
+      Original plan.md Ticket 28 (Complete, Local). Future production tasks: dashboard UI,
+      signed report exports, historical drift views, editor annotations, shareable demo bundles,
+      richer visual polish.
+
+  - id: CORE-029
+    order: 29000
+    title: Production Hardening
+    area: platform
+    priority: P2
+    size: L
+    risk: High
+    depends_on: [CORE-002, CORE-003]
+    summary: >-
+      Add network allowlists for connectors, secrets management integration, environment
+      separation, a role/permission model for future hosted deployment, backup and retention
+      policy, and disaster-recovery notes.
+    acceptance:
+      - The platform has a credible path from local CLI to staged production deployment.
+    required_tests:
+      - Test environment-separation config validation and egress allowlist enforcement.
+      - Test secret-provider seam and readiness report generation.
+    likely_files:
+      - src/crosswordai/production.py
+      - docs/operations.md
+    rollback: Revert hardening config; local-only operation remains the default.
+    notes: >-
+      Original plan.md Ticket 29 (Complete, Local). Future production tasks: managed
+      secret-provider adapters, hosted RBAC integration, backup automation, DR drill evidence,
+      staged deployment manifests, compliance review.
+
+  # ---------------------------------------------------------------------------
+  # Maturity roadmap prioritized backlog (MATURITY_ROADMAP.md). Original ranks P0.1..P2.2.
+  # ---------------------------------------------------------------------------
+  - id: MAT-P0-1
+    order: 30000
+    title: "P0.1 Hardened local core path"
+    area: platform
+    priority: P0
+    size: XL
+    risk: High
+    depends_on: [CORE-019, CORE-020, CORE-021]
+    summary: >-
+      Harden the full local path source pack -> candidates -> grid -> clues -> QA -> exports ->
+      observability -> protected eval gate so the product loop is traceable, testable, and publish-gated
+      before live services are introduced.
+    acceptance:
+      - Every run creates a durable run record and immutable artifacts.
+      - Every published puzzle has source IDs, QA gates, model lineage, public-safe exports, trace spans, and eval evidence.
+      - Hard-gate failures quarantine the puzzle and still produce inspectable artifacts.
+      - The full path runs locally without external credentials, then can swap to production adapters behind existing interfaces.
+    required_tests:
+      - End-to-end test of the hardened core path producing durable run record + immutable artifacts.
+      - Test that hard-gate failure quarantines yet still produces inspectable artifacts.
+    likely_files:
+      - src/crosswordai/core_path.py
+    rollback: Revert to per-stage execution without the unified hardened pipeline.
+    notes: >-
+      MATURITY_ROADMAP rank P0.1 (depends on core Tickets 1-29). Implemented entrypoint:
+      HardenedCorePathPipeline in src/crosswordai/core_path.py. First production objective:
+      harden the core path end to end before broadening adapters, scale, and UI.
+
+  - id: MAT-P0-2
+    order: 31000
+    title: "P0.2 Postgres metadata/source-pack adapter"
+    area: platform
+    priority: P0
+    size: L
+    risk: High
+    depends_on: [MAT-P0-1]
+    summary: >-
+      Remove the local-only metadata bottleneck with a Postgres metadata/source-pack adapter for
+      durable source, graph, model-call, batch, and eval records.
+    acceptance:
+      - Source packs, documents, snippets, graph records, and model calls persist to Postgres via the adapter.
+      - Adapter exposes health checks and is validated against live Postgres/pgvector.
+    required_tests:
+      - Live Postgres/pgvector integration tests for source-pack, graph, model-call, batch, and eval persistence.
+      - Adapter health-check tests.
+    likely_files:
+      - src/crosswordai/storage.py
+      - src/crosswordai/db.py
+      - migrations/
+    rollback: Fall back to local metadata DB adapter.
+    notes: >-
+      MATURITY_ROADMAP rank P0.2 (depends on hardened core path). Implemented surface so far:
+      Postgres adapter methods for source packs, documents, snippets, graph records, model calls,
+      and health checks.
+
+  - id: MAT-P0-3
+    order: 32000
+    title: "P0.3 Object storage validation and signing"
+    area: platform
+    priority: P0
+    size: M
+    risk: Medium
+    depends_on: [MAT-P0-1]
+    summary: >-
+      Make exported artifacts durable, immutable, auditable, and safe for hosted environments via
+      artifact checksums, HMAC signing, signed export manifests, and credentialed S3/MinIO validation.
+    acceptance:
+      - Artifacts carry checksums and HMAC signatures; export manifests are signed.
+      - S3/MinIO adapter is validated with credentials and object-store health checks pass.
+    required_tests:
+      - Tests for artifact checksums, HMAC signing, and signed export manifest verification.
+      - Injectable S3/MinIO validation tests and local object-store health test.
+    likely_files:
+      - src/crosswordai/storage.py
+      - src/crosswordai/exports.py
+    rollback: Use unsigned local artifacts; disable hosted object-store path.
+    notes: >-
+      MATURITY_ROADMAP rank P0.3 (depends on hardened core path). Implemented surface: artifact
+      checksums, HMAC signing, signed export manifests, local object-store health, injectable S3/MinIO validation.
+
+  - id: MAT-P0-4
+    order: 33000
+    title: "P0.4 OpenTelemetry exporter and dashboards"
+    area: observability
+    priority: P0
+    size: M
+    risk: Medium
+    depends_on: [MAT-P0-1]
+    summary: >-
+      Provide production observability for latency, cost, QA gates, retrieval, and model routes via
+      an OTLP exporter, distributed trace propagation, persisted trace/artifact correlation, dashboard
+      templates, and alert rules.
+    acceptance:
+      - OTLP-shaped trace payloads export through an exporter seam.
+      - Trace/run/artifact/model-call correlation, dashboard metrics, and alert rules are available.
+    required_tests:
+      - Test OTLP-shaped payload export and trace/run/artifact/model-call correlation.
+      - Test dashboard metric payloads and alert-rule evaluation.
+    likely_files:
+      - src/crosswordai/observability.py
+    rollback: Disable OTLP exporter; keep local trace rollups only.
+    notes: >-
+      MATURITY_ROADMAP rank P0.4 (depends on hardened core path). Implemented surface: OTLP-shaped
+      trace payloads, exporter seam, trace/run/artifact/model-call correlation, dashboard metrics, alert rules.
+
+  - id: MAT-P0-5
+    order: 34000
+    title: "P0.5 Managed secrets and environment controls"
+    area: security
+    priority: P0
+    size: M
+    risk: High
+    depends_on: [MAT-P0-1]
+    summary: >-
+      Block accidental insecure deployment and prepare staged rollout via a managed secret-provider
+      seam, deployment manifests, staged environment validation, egress checks, and readiness reports.
+    acceptance:
+      - Managed secret-provider seam and deployment manifests exist.
+      - Staged environment validation, egress checks, and readiness reports pass.
+    required_tests:
+      - Tests for secret-provider seam, environment validation, and egress allowlist checks.
+      - Readiness report generation test.
+    likely_files:
+      - src/crosswordai/production.py
+      - docs/operations.md
+    rollback: Revert to local env config; defer staged rollout.
+    notes: >-
+      MATURITY_ROADMAP rank P0.5 (depends on production settings). Implemented surface: managed
+      secret-provider seam, deployment manifests, staged environment validation, egress checks, readiness reports.
+
+  - id: MAT-P0-6
+    order: 35000
+    title: "P0.6 Protected CI eval gate"
+    area: ai-evals
+    priority: P0
+    size: M
+    risk: High
+    depends_on: [CORE-021, MAT-P0-1]
+    summary: >-
+      Prevent regressions in publish gates, retrieval, clue QA, safety, and export policy by adding a
+      protected CI eval gate.
+    acceptance:
+      - CI eval gate blocks merges that regress publish, retrieval, clue QA, safety, or export-policy gates.
+      - Gate runs on a frozen protected eval set and fails on protected hard-gate regressions.
+    required_tests:
+      - CI test that a deliberate publish/retrieval/clue-QA/safety/export regression fails the gate.
+      - Test that the gate runs against the frozen protected eval set.
+    likely_files:
+      - src/crosswordai/evals.py
+      - .github/workflows/
+    rollback: Demote gate to non-blocking warning while investigating.
+    notes: >-
+      MATURITY_ROADMAP rank P0.6 (status "Next"; depends on eval registry). Also listed as
+      IMPLEMENTATION_STATUS "Current Focus" item 1.
+
+  - id: MAT-P1-1
+    order: 36000
+    title: "P1.1 Registry write workflow and promotion transactions"
+    area: ai
+    priority: P1
+    size: L
+    risk: High
+    depends_on: [MAT-P0-6, CORE-027]
+    summary: >-
+      Enable controlled model/prompt/route changes with rollback via a registry write workflow and
+      promotion transactions.
+    acceptance:
+      - Registry mutations occur only through transactional promotion with eval evidence.
+      - Every promotion records a rollback target and audit record.
+    required_tests:
+      - Test transactional registry write with rollback on failure.
+      - Test that promotion without eval evidence is rejected.
+    likely_files:
+      - src/crosswordai/promotion.py
+      - src/crosswordai/registries.py
+    rollback: Keep registries read-only/manually pinned.
+    notes: >-
+      MATURITY_ROADMAP rank P1.1 (depends on protected CI eval gate). Also IMPLEMENTATION_STATUS
+      "Current Focus" item 2.
+
+  - id: MAT-P1-2
+    order: 37000
+    title: "P1.2 Real batch queue and cancellation API"
+    area: backend
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [MAT-P0-2, CORE-022]
+    summary: >-
+      Make batch generation reliable for large theme sets and bakeoffs via a resumable DB-backed batch
+      queue and a cancellation API.
+    acceptance:
+      - Batch runs are resumable from a DB-backed queue.
+      - A cancellation API stops in-flight batches and records partial results.
+    required_tests:
+      - Test DB-backed queue resume after interruption.
+      - Test cancellation API stops a running batch and preserves checkpoints.
+    likely_files:
+      - src/crosswordai/batch.py
+    rollback: Fall back to in-memory checkpointed batch executor.
+    notes: >-
+      MATURITY_ROADMAP rank P1.2 (depends on Postgres adapter). Also IMPLEMENTATION_STATUS
+      "Current Focus" item 3.
+
+  - id: MAT-P1-3
+    order: 38000
+    title: "P1.3 Live model/provider integration"
+    area: ai
+    priority: P1
+    size: L
+    risk: High
+    depends_on: [MAT-P0-4, MAT-P0-5]
+    summary: >-
+      Introduce real model calls after governance, evals, and observability are in place: live
+      Ollama / OpenAI-compatible integration, provider token/cost accounting, streaming, and timeout cancellation.
+    acceptance:
+      - Live Ollama and OpenAI-compatible routes pass integration tests behind existing adapter interfaces.
+      - Provider-specific token/cost accounting, streaming, and timeout cancellation work.
+    required_tests:
+      - Live (and mocked) Ollama/OpenAI-compatible integration tests.
+      - Tests for provider token/cost accounting, streaming, and timeout cancellation.
+    likely_files:
+      - src/crosswordai/models.py
+    rollback: Disable live providers; revert to mock/local adapters.
+    notes: >-
+      MATURITY_ROADMAP rank P1.3 (depends on observability and secrets). Reserve cloud models for
+      final review, difficult clue writing, and low-confidence ambiguity checks.
+
+  - id: MAT-P1-4
+    order: 39000
+    title: "P1.4 Live connector integration with caching/rate limits"
+    area: backend
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [MAT-P0-5, CORE-010]
+    summary: >-
+      Broaden source quality while keeping network behavior governed: live connector integration with
+      response caching, rate-limit/backoff policies, and source refresh workflows.
+    acceptance:
+      - Live connectors run within network allowlists with caching and rate-limit/backoff.
+      - Source refresh workflows update snapshots while preserving provenance.
+    required_tests:
+      - Live-network integration tests for connectors (mockable in CI).
+      - Tests for connector caching, rate-limit/backoff, and source refresh.
+    likely_files:
+      - src/crosswordai/connectors/
+      - src/crosswordai/sources.py
+    rollback: Restrict to notes-only and previously snapshotted sources.
+    notes: >-
+      MATURITY_ROADMAP rank P1.4 (depends on egress controls).
+
+  - id: MAT-P2-1
+    order: 40000
+    title: "P2.1 Distributed Ray/GPU execution"
+    area: platform
+    priority: P2
+    size: L
+    risk: Medium
+    depends_on: [MAT-P1-2, CORE-024]
+    summary: >-
+      Scale proven batch/eval workloads after local behavior is stable via a real Ray executor,
+      autoscaling worker pools, GPU telemetry, and batch-size autotuning.
+    acceptance:
+      - Real Ray executor runs batch/eval sweeps across multiple workers/nodes.
+      - GPU utilization telemetry and batch-size autotuning are captured with throughput benchmarks.
+    required_tests:
+      - Multi-worker Ray execution test (mockable) for batch/eval sweeps.
+      - Tests for GPU telemetry capture and batch-size autotuning decisions.
+    likely_files:
+      - src/crosswordai/distributed.py
+    rollback: Fall back to local single-process executor.
+    notes: >-
+      MATURITY_ROADMAP rank P2.1 (depends on real batch queue).
+
+  - id: MAT-P2-2
+    order: 41000
+    title: "P2.2 Dashboard and editorial UI"
+    area: frontend
+    priority: P2
+    size: XL
+    risk: Medium
+    depends_on: [MAT-P0-1]
+    summary: >-
+      Make the inspection bundle useful to editors and demos after data contracts stabilize via a
+      dashboard and editorial UI (overlaps the web-app-plan delivery).
+    acceptance:
+      - Editors can inspect runs, reports, and the inspection bundle through a UI after contracts stabilize.
+      - UI consumes stable report/export contracts without bypassing publish gates.
+    required_tests:
+      - UI tests for dashboard and editorial review surfaces against stable contracts.
+    likely_files:
+      - web/
+      - src/crosswordai/web_api.py
+    rollback: Defer UI; CLI and report artifacts remain the interface.
+    notes: >-
+      MATURITY_ROADMAP rank P2.2 (depends on reports/export contracts). Detailed delivery is
+      decomposed in the WEB-xxx tickets from docs/web-app-plan.md.
+
+  # ---------------------------------------------------------------------------
+  # Web app build sequence (docs/web-app-plan.md). Original IDs WEB-001..WEB-032.
+  # ---------------------------------------------------------------------------
+  # Stage 1: Web And API Foundation (Milestone M1)
+  - id: WEB-001
+    order: 42000
+    title: FastAPI service skeleton
+    area: frontend
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: [MAT-P0-1]
+    summary: >-
+      Add src/crosswordai/web_api.py with app creation, health metadata, a structured error shape,
+      correlation IDs, and a route-test harness.
+    acceptance:
+      - "`uvicorn crosswordai.web_api:app` starts locally and `GET /health` returns typed JSON."
+    required_tests:
+      - FastAPI TestClient tests for health, error shape, and correlation ID.
+    likely_files:
+      - src/crosswordai/web_api.py
+    rollback: Remove web_api module; CLI remains the only interface.
+    notes: "docs/web-app-plan.md Stage 1 (WEB-001). FastAPI wrapper over existing crosswordai modules."
+
+  - id: WEB-002
+    order: 43000
+    title: Shared contracts and fixtures
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-001]
+    summary: >-
+      Define backend response models plus frontend-facing fixtures for puzzle, run, artifact, QA,
+      report, registry, and batch shapes.
+    acceptance:
+      - Frontend and backend agree on the initial JSON shapes before UI code depends on them.
+    required_tests:
+      - Contract tests and fixture validation.
+    likely_files:
+      - src/crosswordai/web_api.py
+      - web/src/fixtures/
+    rollback: Revert shared contract/fixtures; pin UI to inline mocks.
+    notes: "docs/web-app-plan.md Stage 1 (WEB-002)."
+
+  - id: WEB-003
+    order: 44000
+    title: Scaffold React app
+    area: frontend
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: []
+    summary: >-
+      Create web/ with Vite, React, TypeScript, strict TS config, linting, formatting, and test scripts.
+    acceptance:
+      - "`npm install`, `npm run test`, and `npm run build` work from `web/`."
+    required_tests:
+      - Smoke unit test for app shell.
+    likely_files:
+      - web/
+    rollback: Remove web/ scaffold.
+    notes: "docs/web-app-plan.md Stage 1 (WEB-003). Vite + React + TS; package manager npm unless repo standard changes."
+
+  - id: WEB-004
+    order: 45000
+    title: Typed API client
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-002, WEB-003]
+    summary: >-
+      Add a typed API client with error normalization, request timeout handling, a retry policy for
+      safe reads, and a mock transport for tests.
+    acceptance:
+      - Components do not call fetch directly.
+      - Errors display consistent user-facing states.
+    required_tests:
+      - API client unit tests with success, failure, timeout, and malformed payload cases.
+    likely_files:
+      - web/src/api/
+    rollback: Revert client; components fall back to fixtures.
+    notes: "docs/web-app-plan.md Stage 1 (WEB-004)."
+
+  - id: WEB-005
+    order: 46000
+    title: Design tokens
+    area: frontend
+    priority: P1
+    size: S
+    risk: Low
+    depends_on: [WEB-003]
+    summary: >-
+      Add color, typography, spacing, focus, z-index, board, and status tokens for dark studio and
+      light player themes.
+    acceptance:
+      - Theme tokens are centralized and documented in code.
+      - No hard-coded repeated colors in components.
+    required_tests:
+      - Token import test and visual smoke test.
+    likely_files:
+      - web/src/styles/tokens.ts
+    rollback: Revert tokens; components use local styles temporarily.
+    notes: "docs/web-app-plan.md Stage 1 (WEB-005). Split-theme: dark studio, light player; restrained pink/red accent."
+
+  - id: WEB-006
+    order: 47000
+    title: App shell and routing
+    area: frontend
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: [WEB-004, WEB-005]
+    summary: >-
+      Add navigation and routes for dashboard, create puzzle, run detail, source review, player,
+      reports, batches, experiments, registries, and admin readiness.
+    acceptance:
+      - Each route renders a stable layout with accessible page title and navigation state.
+    required_tests:
+      - Router tests and Playwright route smoke tests.
+    likely_files:
+      - web/src/app/
+      - web/src/routes/
+    rollback: Reduce to a single-route shell.
+    notes: "docs/web-app-plan.md Stage 1 (WEB-006). Completes Milestone M1."
+
+  # Stage 2: Creator Generation Vertical (Milestone M2)
+  - id: WEB-007
+    order: 48000
+    title: Generation API slice
+    area: frontend
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [WEB-001, WEB-002]
+    summary: >-
+      Implement source-pack, generation-run, run-list, run-detail, artifact, and player-safe puzzle
+      read endpoints needed by the first creator workflow.
+    acceptance:
+      - A UI can create a local generation request and read back run state without CLI usage.
+    required_tests:
+      - FastAPI route tests using generated or fixture-backed artifacts.
+    likely_files:
+      - src/crosswordai/web_api.py
+    rollback: Revert endpoints; UI uses static fixtures.
+    notes: >-
+      docs/web-app-plan.md Stage 2 (WEB-007). Endpoints include POST /api/source-packs,
+      POST /api/puzzles/generate, GET /api/runs, GET /api/runs/{id}, GET /api/artifacts/{id},
+      GET /api/puzzles/{id}. Keep endpoints thin; call existing domain modules.
+
+  - id: WEB-008
+    order: 49000
+    title: New puzzle workflow
+    area: frontend
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: [WEB-006, WEB-007]
+    summary: >-
+      Add a creation form for theme, notes, audience, difficulty, clue style, source preferences,
+      model route, and budget guardrails.
+    acceptance:
+      - Form validates required inputs and starts a source-pack or generation request.
+    required_tests:
+      - Form validation tests and API submit test.
+    likely_files:
+      - web/src/features/create/
+    rollback: Revert create form; runs started via CLI/API only.
+    notes: "docs/web-app-plan.md Stage 2 (WEB-008)."
+
+  - id: WEB-009
+    order: 50000
+    title: Studio dashboard
+    area: frontend
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: [WEB-006, WEB-007]
+    summary: >-
+      Build a dark dashboard showing recent runs, publish status, quarantine counts, model cost,
+      route health, and batch activity.
+    acceptance:
+      - Creator can see what needs attention within one screen.
+    required_tests:
+      - Component tests for empty, loading, populated, and error states.
+    likely_files:
+      - web/src/features/dashboard/
+    rollback: Revert dashboard to a simple run list.
+    notes: "docs/web-app-plan.md Stage 2 (WEB-009)."
+
+  - id: WEB-010
+    order: 51000
+    title: Generation run timeline
+    area: frontend
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: [WEB-007]
+    summary: >-
+      Show stages from source pack through candidates, grid, clues, QA, repair, publish gate,
+      exports, and reports.
+    acceptance:
+      - User can track current state, completed stages, failures, and artifacts.
+    required_tests:
+      - Timeline rendering tests using run fixtures.
+    likely_files:
+      - web/src/features/run/
+    rollback: Show plain run status text instead of a timeline.
+    notes: "docs/web-app-plan.md Stage 2 (WEB-010)."
+
+  - id: WEB-011
+    order: 52000
+    title: Source review
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-007]
+    summary: >-
+      Show source pack metadata, taxonomy, evidence snippets, rights status, source quality, vector
+      retrieval notes, and graph entities.
+    acceptance:
+      - Creator can inspect why content was trusted or blocked.
+    required_tests:
+      - Fixture tests for approved, warning, and blocked evidence.
+    likely_files:
+      - web/src/features/source-review/
+    rollback: Revert to raw source-pack JSON view.
+    notes: "docs/web-app-plan.md Stage 2 (WEB-011). Must not expose raw evidence text unsafely."
+
+  - id: WEB-012
+    order: 53000
+    title: Candidate and grid review
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-007]
+    summary: >-
+      Show answer candidates, source support, duplicate/similarity flags, grid preview, grid
+      constraints, and validation failures.
+    acceptance:
+      - Creator can understand whether the puzzle structure is viable.
+    required_tests:
+      - Grid preview and candidate table tests.
+    likely_files:
+      - web/src/features/candidate-grid/
+    rollback: Revert to candidate/grid JSON view.
+    notes: "docs/web-app-plan.md Stage 2 (WEB-012)."
+
+  - id: WEB-013
+    order: 54000
+    title: Clue QA review
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-007]
+    summary: >-
+      Show clue candidates, chosen clue, evidence IDs, QA flags, ambiguity, leakage, rights risk,
+      difficulty, and repair history.
+    acceptance:
+      - Failed clues are visually distinct and explain the blocking reason.
+    required_tests:
+      - QA state tests and axe checks.
+    likely_files:
+      - web/src/features/clue-qa/
+    rollback: Revert to clue QA JSON view.
+    notes: "docs/web-app-plan.md Stage 2 (WEB-013)."
+
+  - id: WEB-014
+    order: 55000
+    title: Publish review
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-007]
+    summary: >-
+      Show public-safe export summary, answer key controls, source map, QA scorecard, lineage,
+      quarantine reasons, and an open-in-player link.
+    acceptance:
+      - Creator can open a generated puzzle or inspect why it was quarantined.
+    required_tests:
+      - Publish/quarantine fixture tests.
+    likely_files:
+      - web/src/features/publish-review/
+    rollback: Revert to publish-decision JSON view.
+    notes: "docs/web-app-plan.md Stage 2 (WEB-014). Completes Milestone M2."
+
+  # Stage 3: Puzzle Player (Milestone M3)
+  - id: WEB-015
+    order: 56000
+    title: Player puzzle loader
+    area: frontend
+    priority: P1
+    size: S
+    risk: Low
+    depends_on: [WEB-007]
+    summary: >-
+      Wire the player route to the player-safe puzzle endpoint and local puzzle fixtures.
+    acceptance:
+      - The player can load a generated or fixture puzzle without exposing private evidence.
+    required_tests:
+      - Loader tests for loading, not found, malformed, and success states.
+    likely_files:
+      - web/src/features/player/loader.ts
+    rollback: Load only bundled fixture puzzles.
+    notes: "docs/web-app-plan.md Stage 3 (WEB-015)."
+
+  - id: WEB-016
+    order: 57000
+    title: Crossword board model
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-003]
+    summary: >-
+      Implement pure board logic for numbering, active cell, active answer, direction changes,
+      entry, deletion, completion, and validation state.
+    acceptance:
+      - Board behavior is tested before UI interaction code depends on it.
+    required_tests:
+      - Unit tests for navigation, entry, deletion, and completion edge cases.
+    likely_files:
+      - web/src/features/player/boardModel.ts
+    rollback: Revert board model; player remains read-only.
+    notes: "docs/web-app-plan.md Stage 3 (WEB-016). Pure logic, TDD-first."
+
+  - id: WEB-017
+    order: 58000
+    title: Crossword board UI
+    area: frontend
+    priority: P1
+    size: L
+    risk: Medium
+    depends_on: [WEB-016]
+    summary: >-
+      Build an interactive grid with black squares, numbering, active cell, active answer
+      highlighting, checked letters, and keyboard navigation.
+    acceptance:
+      - Arrow keys, typing, backspace, delete, tab, shift-tab, and click selection work.
+    required_tests:
+      - Component tests and Playwright keyboard tests.
+    likely_files:
+      - web/src/features/player/Board.tsx
+    rollback: Fall back to a static, non-interactive grid render.
+    notes: "docs/web-app-plan.md Stage 3 (WEB-017)."
+
+  - id: WEB-018
+    order: 59000
+    title: Clue panels
+    area: frontend
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: [WEB-017]
+    summary: >-
+      Add Across and Down clue lists with active clue sync, completed clue state, and
+      mobile-friendly tabs.
+    acceptance:
+      - Selecting a clue moves focus to the matching answer and vice versa.
+    required_tests:
+      - Interaction tests for clue/grid sync.
+    likely_files:
+      - web/src/features/player/CluePanels.tsx
+    rollback: Show static clue lists without grid sync.
+    notes: "docs/web-app-plan.md Stage 3 (WEB-018)."
+
+  - id: WEB-019
+    order: 60000
+    title: Solving toolbar
+    area: frontend
+    priority: P1
+    size: M
+    risk: Low
+    depends_on: [WEB-017]
+    summary: >-
+      Add check cell, check word, reveal cell, reveal word, clear, timer, pause, print, and settings controls.
+    acceptance:
+      - Controls are keyboard accessible and have icon labels/tooltips.
+    required_tests:
+      - RTL tests for actions and axe checks.
+    likely_files:
+      - web/src/features/player/Toolbar.tsx
+    rollback: Ship a minimal toolbar (timer only).
+    notes: "docs/web-app-plan.md Stage 3 (WEB-019). Icons via lucide-react."
+
+  - id: WEB-020
+    order: 61000
+    title: Player persistence and results
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-015, WEB-017]
+    summary: >-
+      Save local progress by puzzle ID with version handling and show completion time,
+      checked/revealed stats, metadata, and source-safe attribution.
+    acceptance:
+      - Refreshing preserves entries and completion state; finishing the puzzle shows a results view.
+    required_tests:
+      - Local storage tests, results fixture tests, and Playwright refresh test.
+    likely_files:
+      - web/src/features/player/persistence.ts
+    rollback: Disable persistence; non-saving play only.
+    notes: "docs/web-app-plan.md Stage 3 (WEB-020)."
+
+  - id: WEB-021
+    order: 62000
+    title: Responsive player accessibility pass
+    area: frontend
+    priority: P1
+    size: M
+    risk: Medium
+    depends_on: [WEB-017, WEB-018, WEB-019]
+    summary: >-
+      Harden desktop, tablet, and mobile layouts, screen reader labels, high contrast, reduced
+      motion, and touch targets.
+    acceptance:
+      - No text overlap or unusable board states at common viewport sizes.
+    required_tests:
+      - Playwright screenshots and axe checks at mobile, tablet, and desktop widths.
+    likely_files:
+      - web/src/features/player/
+    rollback: Ship desktop-first layout while deferring mobile hardening.
+    notes: >-
+      docs/web-app-plan.md Stage 3 (WEB-021). Targets WCAG 2.2 AA; aria-live announcements,
+      44px touch targets, no color-only status. Completes Milestone M3.
+
+  # Stage 4: Admin And Operations (Milestone M4)
+  - id: WEB-022
+    order: 63000
+    title: Registry viewer
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-006]
+    summary: >-
+      Show model, route, prompt, source connector, wordlist, policy, and output schema registries.
+    acceptance:
+      - Admin can inspect active versions, metadata, and warnings.
+    required_tests:
+      - Registry fixture tests.
+    likely_files:
+      - web/src/features/admin/registries/
+    rollback: Revert to registries JSON view.
+    notes: "docs/web-app-plan.md Stage 4 (WEB-022). Local-only admin surface."
+
+  - id: WEB-023
+    order: 64000
+    title: Batch generation UI
+    area: frontend
+    priority: P2
+    size: M
+    risk: Medium
+    depends_on: [WEB-022]
+    summary: >-
+      Add batch creation, checkpoint status, budget/cancellation state, per-theme outcome, and artifact links.
+    acceptance:
+      - Admin can run or inspect large batches across themes and routes.
+    required_tests:
+      - Batch lifecycle fixture tests.
+    likely_files:
+      - web/src/features/admin/batches/
+    rollback: Revert to batch JSON inspection.
+    notes: "docs/web-app-plan.md Stage 4 (WEB-023)."
+
+  - id: WEB-024
+    order: 65000
+    title: Experiment lab
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-022]
+    summary: >-
+      Show model/route/prompt/retrieval/judge/repair experiment matrices, scorecards, and leaderboards.
+    acceptance:
+      - Admin can compare multiple strategies before promotion.
+    required_tests:
+      - Matrix rendering and sorting tests.
+    likely_files:
+      - web/src/features/admin/experiments/
+    rollback: Revert to experiment-results JSON view.
+    notes: "docs/web-app-plan.md Stage 4 (WEB-024)."
+
+  - id: WEB-025
+    order: 66000
+    title: Observability dashboard
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-022]
+    summary: >-
+      Show model calls, latency, retry, cache hit rate, token/cost estimates, QA failure categories,
+      and trace spans.
+    acceptance:
+      - Admin can diagnose expensive or low-quality routes.
+    required_tests:
+      - Metrics fixture tests and empty-state tests.
+    likely_files:
+      - web/src/features/admin/observability/
+    rollback: Revert to metrics JSON view.
+    notes: "docs/web-app-plan.md Stage 4 (WEB-025)."
+
+  - id: WEB-026
+    order: 67000
+    title: Production readiness
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-022]
+    summary: >-
+      Show secrets, environment, egress, RBAC, backup, disaster recovery, artifact signing, and
+      storage readiness.
+    acceptance:
+      - Admin can see blockers before production deployment.
+    required_tests:
+      - Readiness status tests.
+    likely_files:
+      - web/src/features/admin/readiness/
+    rollback: Revert to readiness JSON view.
+    notes: "docs/web-app-plan.md Stage 4 (WEB-026)."
+
+  - id: WEB-027
+    order: 68000
+    title: Governance actions
+    area: frontend
+    priority: P2
+    size: M
+    risk: Medium
+    depends_on: [WEB-022]
+    summary: >-
+      Add UI stubs for promotion review, rollback plan display, shadow-mode status, and audit records.
+    acceptance:
+      - The UI supports governance review before registry mutation work is automated.
+    required_tests:
+      - Governance fixture tests.
+    likely_files:
+      - web/src/features/admin/governance/
+    rollback: Hide governance actions until registry mutation is automated.
+    notes: "docs/web-app-plan.md Stage 4 (WEB-027). Completes Milestone M4."
+
+  # Stage 5: Reports And Inspection (Milestone M5)
+  - id: WEB-028
+    order: 69000
+    title: Inspection bundle viewer
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-007]
+    summary: >-
+      Show export manifest, checksums, artifact links, source map, answer hashes, and QA scorecard.
+    acceptance:
+      - Reviewers can verify what was produced and by which route.
+    required_tests:
+      - Artifact fixture tests.
+    likely_files:
+      - web/src/features/reports/inspection/
+    rollback: Revert to manifest JSON view.
+    notes: "docs/web-app-plan.md Stage 5 (WEB-028)."
+
+  - id: WEB-029
+    order: 70000
+    title: Clue lineage viewer
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-028]
+    summary: >-
+      Show clue-by-clue evidence IDs, model route, prompt version, repair attempts, QA flags, and
+      final decision.
+    acceptance:
+      - Every published clue has a traceable explanation.
+    required_tests:
+      - Lineage table tests.
+    likely_files:
+      - web/src/features/reports/lineage/
+    rollback: Revert to lineage JSON view.
+    notes: "docs/web-app-plan.md Stage 5 (WEB-029)."
+
+  - id: WEB-030
+    order: 71000
+    title: Source coverage report
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-028]
+    summary: >-
+      Show source diversity, retrieval precision, stale-source flags, taxonomy classification, and
+      evidence coverage gaps.
+    acceptance:
+      - Weak data areas are visible before publishing.
+    required_tests:
+      - Report chart tests.
+    likely_files:
+      - web/src/features/reports/source-coverage/
+    rollback: Revert to coverage JSON view.
+    notes: "docs/web-app-plan.md Stage 5 (WEB-030)."
+
+  - id: WEB-031
+    order: 72000
+    title: Model contribution report
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-028]
+    summary: >-
+      Show which model/route contributed to each stage, cost, latency, cache status, and quality outcome.
+    acceptance:
+      - Model usage is transparent and auditable.
+    required_tests:
+      - Model report tests.
+    likely_files:
+      - web/src/features/reports/model-contribution/
+    rollback: Revert to model-contribution JSON view.
+    notes: "docs/web-app-plan.md Stage 5 (WEB-031)."
+
+  - id: WEB-032
+    order: 73000
+    title: Export and print views
+    area: frontend
+    priority: P2
+    size: M
+    risk: Low
+    depends_on: [WEB-028]
+    summary: >-
+      Add print-friendly puzzle, answer key, QA summary, and admin report views.
+    acceptance:
+      - Exports are readable and do not leak private evidence.
+    required_tests:
+      - Print CSS snapshot and content tests.
+    likely_files:
+      - web/src/features/reports/print/
+    rollback: Defer print views; rely on JSON/PDF export only.
+    notes: "docs/web-app-plan.md Stage 5 (WEB-032). Completes Milestone M5."
